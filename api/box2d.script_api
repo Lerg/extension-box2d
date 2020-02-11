@@ -1,0 +1,16 @@
+- name: box2d
+  type: table
+  desc: Box2D Physics Engine
+
+  members:
+
+#*****************************************************************************************************
+
+  - name: init
+    type: function
+    desc: Init the extension and set a listener function.
+
+    parameters:
+      - name: params
+        type: table
+        desc: table with the listener function.
