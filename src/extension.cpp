@@ -49,14 +49,47 @@ dmExtension::Result INITIALIZE(dmExtension::Params *params) {
 	lua_State *L = params->m_L;
 	luaL_register(L, EXTENSION_NAME_STRING, lua_functions);
 
-	lua_pushnumber(L, 1);
+	lua_pushnumber(L, PhysicsBodyDynamic);
 	lua_setfield(L, -2, "dynamic_body");
 
-	lua_pushnumber(L, 2);
+	lua_pushnumber(L, PhysicsBodyStatic);
 	lua_setfield(L, -2, "static_body");
 
-	lua_pushnumber(L, 3);
+	lua_pushnumber(L, PhysicsBodyKinematic);
 	lua_setfield(L, -2, "kinematic_body");
+
+	lua_pushnumber(L, PhysicsJointRevolute);
+	lua_setfield(L, -2, "revolute_joint");
+
+	lua_pushnumber(L, PhysicsJointDistance);
+	lua_setfield(L, -2, "distance_joint");
+
+	lua_pushnumber(L, PhysicsJointPrismatic);
+	lua_setfield(L, -2, "prismatic_joint");
+
+	lua_pushnumber(L, PhysicsJointLine);
+	lua_setfield(L, -2, "line_joint");
+
+	lua_pushnumber(L, PhysicsJointWeld);
+	lua_setfield(L, -2, "weld_joint");
+
+	lua_pushnumber(L, PhysicsJointPulley);
+	lua_setfield(L, -2, "pulley_joint");
+
+	lua_pushnumber(L, PhysicsJointFriction);
+	lua_setfield(L, -2, "friction_joint");
+
+	lua_pushnumber(L, PhysicsJointGear);
+	lua_setfield(L, -2, "gear_joint");
+
+	lua_pushnumber(L, PhysicsJointMouse);
+	lua_setfield(L, -2, "mouse_joint");
+
+	lua_pushnumber(L, PhysicsJointWheel);
+	lua_setfield(L, -2, "wheel_joint");
+
+	lua_pushnumber(L, PhysicsJointRope);
+	lua_setfield(L, -2, "rope_joint");
 
 	lua_pop(params->m_L, 1);
 

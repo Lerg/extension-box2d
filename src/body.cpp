@@ -41,13 +41,13 @@ int Body::index(lua_State *L) {
 		case HASH_type:
 			switch (lua_body->body->GetType()) {
 				case b2_dynamicBody:
-					lua_pushnumber(L, 1.0);
+					lua_pushnumber(L, PhysicsBodyDynamic);
 					break;
 				case b2_staticBody:
-					lua_pushnumber(L, 2.0);
+					lua_pushnumber(L, PhysicsBodyStatic);
 					break;
 				case b2_kinematicBody:
-					lua_pushnumber(L, 3.0);
+					lua_pushnumber(L, PhysicsBodyKinematic);
 					break;
 				default:
 					lua_pushnil(L);

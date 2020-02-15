@@ -8,9 +8,69 @@
 
   - name: init
     type: function
-    desc: Init the extension and set a listener function.
+    desc: Init the extension.
+
+  - name: new_world
+    type: function
+    desc: Create a new physics world.
 
     parameters:
       - name: params
         type: table
-        desc: table with the listener function.
+        desc: table with gravity setting.
+
+  - name: dynamic_body
+    type: number
+    desc: Dynamic body.
+
+  - name: static_body
+    type: number
+    desc: Static body.
+
+  - name: kinematic_body
+    type: number
+    desc: Static body.
+
+  - name: revolute_joint
+    type: number
+    desc: Revolute joint.
+    
+  - name: distance_joint
+    type: number
+    desc: Distance joint.
+    
+  - name: prismatic_joint
+    type: number
+    desc: Prismatic joint.
+    
+  - name: line_joint
+    type: number
+    desc: Line joint.
+    
+  - name: weld_joint
+    type: number
+    desc: Weld joint.
+    
+  - name: pulley_joint
+    type: number
+    desc: Pulley joint.
+    
+  - name: friction_joint
+    type: number
+    desc: Friction joint.
+    
+  - name: gear_joint
+    type: number
+    desc: Gear joint.
+    
+  - name: mouse_joint
+    type: number
+    desc: Mouse joint.
+    
+  - name: wheel_joint
+    type: number
+    desc: Wheel joint.
+    
+  - name: rope_joint
+    type: number
+    desc: Rope joint.

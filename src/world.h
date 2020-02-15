@@ -5,6 +5,7 @@
 
 #include "extension.h"
 #include "body.h"
+#include "joint.h"
 
 struct CollisionEvent {
 	Body *body;
@@ -19,6 +20,7 @@ private:
 	static int index(lua_State *L);
 	static int newindex(lua_State *L);
 	static int new_body(lua_State *L);
+	static int new_joint(lua_State *L);
 	static int step(lua_State *L);
 	static int destroy(lua_State *L);
 	void add_collision_event(CollisionEvent event);

@@ -3,6 +3,12 @@
 
 #include "extension.h"
 
+enum PhysicsBody {
+	PhysicsBodyDynamic,
+	PhysicsBodyStatic,
+	PhysicsBodyKinematic
+};
+
 class Body {
 private:
 	b2World *world;

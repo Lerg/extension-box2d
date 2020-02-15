@@ -38,10 +38,7 @@ int World::newindex(lua_State *L) {
 	const char *key = lua_tostring(L, 2);
 	const int value_index = 3;
 	switch (hash_string(key)) {
-		/*case HASH_x:
-			checkNumber(L, valueIndex);
-			luaSource->x = lua_tonumber(L, valueIndex);
-			OpenAL::getInstance()->setSourcePosition(luaSource->source, luaSource->x, luaSource->y, luaSource->z);
+		/*case HASH_:
 			break;
 		*/
 	}
@@ -52,7 +49,7 @@ int World::new_body(lua_State *L) {
 	utils::check_arg_count(L, 2);
 
 	lua_getfield(L, 1, "__userdata");
-	if (lua_type(L, -1) != LUA_TLIGHTUSERDATA) {
+	if (!lua_islightuserdata(L, -1)) {
 		return 0;
 	}
 	World *lua_world = (World *)lua_touserdata(L, -1);
@@ -68,9 +65,9 @@ int World::new_body(lua_State *L) {
 	lua_getfield(L, -1, "type");
 	if (lua_isnumber(L, -1)) {
 		double body_type = lua_tonumber(L, -1);
-		if (body_type == 2.0) {
+		if (body_type == PhysicsBodyStatic) {
 			body_definition.type = b2_staticBody;
-		} else if (body_type == 3.0) {
+		} else if (body_type == PhysicsBodyKinematic) {
 			body_definition.type = b2_kinematicBody;
 		}
 	}
@@ -196,6 +193,139 @@ int World::new_body(lua_State *L) {
 	return 1;
 }
 
+int World::new_joint(lua_State *L) {
+	utils::check_arg_count(L, 2);
+
+	lua_getfield(L, 1, "__userdata");
+	if (!lua_islightuserdata(L, -1)) {
+		return 0;
+	}
+	World *lua_world = (World *)lua_touserdata(L, -1);
+	lua_pop(L, 1);
+
+	utils::get_table(L, 2);
+
+	int joint_type = PhysicsJointWeld;
+	lua_getfield(L, -1, "type");
+	if (lua_isnumber(L, -1)) {
+		joint_type = lua_tonumber(L, -1);
+	}
+	lua_pop(L, 1);
+
+	Body *body = NULL;
+	lua_getfield(L, -1, "body");
+	if (lua_istable(L, -1)) {
+		lua_getfield(L, -1, "__userdata");
+		if (lua_islightuserdata(L, -1)) {
+			body = (Body *)lua_touserdata(L, -1);
+		}
+		lua_pop(L, 1);
+	}
+	lua_pop(L, 1);
+
+	Body *other_body = NULL;;
+	lua_getfield(L, -1, "other_body");
+	if (lua_istable(L, -1)) {
+		lua_getfield(L, -1, "__userdata");
+		if (lua_islightuserdata(L, -1)) {
+			other_body = (Body *)lua_touserdata(L, -1);
+		}
+		lua_pop(L, 1);
+	}
+	lua_pop(L, 1);
+
+	bool collide_connected = false;
+	lua_getfield(L, -1, "collide_connected");
+	if (lua_isboolean(L, -1)) {
+		collide_connected = lua_toboolean(L, -1);
+	}
+	lua_pop(L, 1);
+
+	b2Vec2 anchor = b2Vec2_zero;
+	lua_getfield(L, -1, "anchor");
+	if (lua_isuserdata(L, -1)) {
+		lua_getfield(L, -1, "x");
+		anchor.x = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+
+		lua_getfield(L, -1, "y");
+		anchor.y = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+	}
+	lua_pop(L, 1);
+ 
+	b2Vec2 other_anchor = b2Vec2_zero;
+	lua_getfield(L, -1, "other_anchor");
+	if (lua_isuserdata(L, -1)) {
+		lua_getfield(L, -1, "x");
+		other_anchor.x = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+
+		lua_getfield(L, -1, "y");
+		other_anchor.y = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+	}
+	lua_pop(L, 1);
+
+	double length = 0;
+	lua_getfield(L, -1, "length");
+	if (lua_isnumber(L, -1)) {
+		length = lua_tonumber(L, -1);
+	}
+	lua_pop(L, 1);
+
+	double frequency = 0;
+	lua_getfield(L, -1, "frequency");
+	if (lua_isnumber(L, -1)) {
+		frequency = lua_tonumber(L, -1);
+	}
+	lua_pop(L, 1);
+
+	double damping = 0;
+	lua_getfield(L, -1, "damping");
+	if (lua_isnumber(L, -1)) {
+		damping = lua_tonumber(L, -1);
+	}
+	lua_pop(L, 1);
+
+	lua_pop(L, 1); // params.
+
+	b2Joint *joint = NULL;
+
+	if (body == NULL) {
+		dmLogError("body should not be nil.");
+		return 0;
+	} else if (joint_type != PhysicsJointMouse && other_body == NULL) {
+		dmLogError("other_body should not be nil.");
+		return 0;
+	}
+
+	switch (joint_type) {
+		case PhysicsJointDistance: {
+				b2DistanceJointDef joint_definition;
+				joint_definition.Initialize(body->body, other_body->body, anchor, other_anchor);
+				if (length > 0) {
+					joint_definition.length = length;
+				} else {
+					joint_definition.length = b2Distance(body->body->GetPosition(), other_body->body->GetPosition());
+				}
+				dmLogInfo("sdgf %f", joint_definition.length);
+				joint = lua_world->world->CreateJoint(&joint_definition);
+			}
+			break;
+		default:
+			break;
+	}
+	
+	if (joint != NULL) {
+		Joint *lua_joint = new Joint(lua_world->world, joint);
+		lua_joint->push(L);
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
 int World::step(lua_State *L) {
 	utils::check_arg_count(L, 4);
 
@@ -247,6 +377,10 @@ void World::push(lua_State *L) {
 	// world:new_body()
 	lua_pushcfunction(L, new_body);
 	lua_setfield(L, -2, "new_body");
+
+	// world:new_joint()
+	lua_pushcfunction(L, new_joint);
+	lua_setfield(L, -2, "new_joint");
 
 	// world:step()
 	lua_pushcfunction(L, step);
