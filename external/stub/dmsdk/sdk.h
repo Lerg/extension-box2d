@@ -21,6 +21,8 @@
 #include <dmsdk/dlib/log.h>
 #include <dmsdk/script/script.h>
 
+#include <dmsdk/vectormath_aos.h>
+
 #define luaL_reg luaL_Reg
 
 #define DM_DECLARE_EXTENSION(symbol, name, app_init, app_final, init, update, on_event, final) ;

@@ -59,7 +59,17 @@ namespace utils {
 	}
 
 	// String.
-	void table_get_string_value(lua_State *L, const char *key, char **value, const char *default_value, bool not_null) {
+	const char *table_get_string(lua_State *L, const char *key, const char *default_value) {
+		lua_getfield(L, -1, key);
+		const char *value = default_value;
+		if (lua_isstring(L, -1)) {
+			value = lua_tostring(L, -1);
+		}
+		lua_pop(L, 1);
+		return value;
+	}
+
+	void table_get_stringp_value(lua_State *L, const char *key, char **value, const char *default_value, bool not_null) {
 		if (*value != NULL) {
 			delete []*value;
 			*value = NULL;
@@ -85,24 +95,34 @@ namespace utils {
 		}
 	}
 
-	void table_get_string(lua_State *L, const char *key, char **value) {
-		table_get_string_value(L, key, value, NULL, false);
+	void table_get_stringp(lua_State *L, const char *key, char **value) {
+		table_get_stringp_value(L, key, value, NULL, false);
 	}
 
-	void table_get_string(lua_State *L, const char *key, char **value, const char *default_value) {
+	void table_get_stringp(lua_State *L, const char *key, char **value, const char *default_value) {
 		if (default_value != NULL) {
-			table_get_string_value(L, key, value, default_value, false);
+			table_get_stringp_value(L, key, value, default_value, false);
 		} else {
 			dmLogError("table_get_string: default value is NULL for key %s", key);
 		}
 	}
 
-	void table_get_string_not_null(lua_State *L, const char *key, char **value) {
-		table_get_string_value(L, key, value, NULL, true);
+	void table_get_stringp_not_null(lua_State *L, const char *key, char **value) {
+		table_get_stringp_value(L, key, value, NULL, true);
 	}
 
 	// Integer.
-	void table_get_integer_value(lua_State *L, const char *key, int **value, int *default_value, bool not_null) {
+	int table_get_integer(lua_State *L, const char *key, int default_value) {
+		lua_getfield(L, -1, key);
+		int value = default_value;
+		if (lua_isnumber(L, -1)) {
+			value = lua_tointeger(L, -1);
+		}
+		lua_pop(L, 1);
+		return value;
+	}
+
+	void table_get_integerp_value(lua_State *L, const char *key, int **value, int *default_value, bool not_null) {
 		if (*value != NULL) {
 			delete *value;
 			*value = NULL;
@@ -121,20 +141,30 @@ namespace utils {
 		}
 	}
 
-	void table_get_integer(lua_State *L, const char *key, int **value) {
-		table_get_integer_value(L, key, value, NULL, false);
+	void table_get_integerp(lua_State *L, const char *key, int **value) {
+		table_get_integerp_value(L, key, value, NULL, false);
 	}
 
-	void table_get_integer(lua_State *L, const char *key, int **value, int default_value) {
-		table_get_integer_value(L, key, value, &default_value, false);
+	void table_get_integerp(lua_State *L, const char *key, int **value, int default_value) {
+		table_get_integerp_value(L, key, value, &default_value, false);
 	}
 
-	void table_get_integer_not_null(lua_State *L, const char *key, int **value) {
-		table_get_integer_value(L, key, value, NULL, true);
+	void table_get_integerp_not_null(lua_State *L, const char *key, int **value) {
+		table_get_integerp_value(L, key, value, NULL, true);
 	}
 
 	// Double.
-	void table_get_double_value(lua_State *L, const char *key, double **value, double *default_value, bool not_null) {
+	double table_get_double(lua_State *L, const char *key, double default_value) {
+		lua_getfield(L, -1, key);
+		double value = default_value;
+		if (lua_isnumber(L, -1)) {
+			value = lua_tonumber(L, -1);
+		}
+		lua_pop(L, 1);
+		return value;
+	}
+
+	void table_get_doublep_value(lua_State *L, const char *key, double **value, double *default_value, bool not_null) {
 		if (*value != NULL) {
 			delete *value;
 			*value = NULL;
@@ -153,20 +183,30 @@ namespace utils {
 		}
 	}
 
-	void table_get_double(lua_State *L, const char *key, double **value) {
-		table_get_double_value(L, key, value, NULL, false);
+	void table_get_doublep(lua_State *L, const char *key, double **value) {
+		table_get_doublep_value(L, key, value, NULL, false);
 	}
 
-	void table_get_double(lua_State *L, const char *key, double **value, double default_value) {
-		table_get_double_value(L, key, value, &default_value, false);
+	void table_get_doublep(lua_State *L, const char *key, double **value, double default_value) {
+		table_get_doublep_value(L, key, value, &default_value, false);
 	}
 
-	void table_get_double_not_null(lua_State *L, const char *key, double **value) {
-		table_get_double_value(L, key, value, NULL, true);
+	void table_get_doublep_not_null(lua_State *L, const char *key, double **value) {
+		table_get_doublep_value(L, key, value, NULL, true);
 	}
 
 	// Boolean.
-	void table_get_boolean_value(lua_State *L, const char *key, bool **value, bool *default_value, bool not_null) {
+	bool table_get_boolean(lua_State *L, const char *key, bool default_value) {
+		lua_getfield(L, -1, key);
+		bool value = default_value;
+		if (lua_isboolean(L, -1)) {
+			value = lua_toboolean(L, -1);
+		}
+		lua_pop(L, 1);
+		return value;
+	}
+
+	void table_get_booleanp_value(lua_State *L, const char *key, bool **value, bool *default_value, bool not_null) {
 		if (*value != NULL) {
 			delete *value;
 			*value = NULL;
@@ -185,23 +225,32 @@ namespace utils {
 		}
 	}
 
-	void table_get_boolean(lua_State *L, const char *key, bool **value) {
-		table_get_boolean_value(L, key, value, NULL, false);
+	void table_get_booleanp(lua_State *L, const char *key, bool **value) {
+		table_get_booleanp_value(L, key, value, NULL, false);
 	}
 
-	void table_get_boolean(lua_State *L, const char *key, bool **value, bool default_value) {
-		table_get_boolean_value(L, key, value, &default_value, false);
+	void table_get_booleanp(lua_State *L, const char *key, bool **value, bool default_value) {
+		table_get_booleanp_value(L, key, value, &default_value, false);
 	}
 
-	void table_get_boolean_not_null(lua_State *L, const char *key, bool **value) {
-		table_get_boolean_value(L, key, value, NULL, true);
+	void table_get_booleanp_not_null(lua_State *L, const char *key, bool **value) {
+		table_get_booleanp_value(L, key, value, NULL, true);
 	}
 
 	// Function.
-	void table_get_function_value(lua_State *L, const char *key, int *value, bool not_null) {
+	int table_get_function(lua_State *L, const char *key, int default_value) {
 		lua_getfield(L, -1, key);
-		int value_type = lua_type(L, -1);
-		if (value_type == LUA_TFUNCTION) {
+		int value = default_value;
+		if (lua_isfunction(L, -1)) {
+			value = luaL_ref(L, LUA_REGISTRYINDEX);
+		}
+		lua_pop(L, 1);
+		return value;
+	}
+
+	void table_get_functionp_value(lua_State *L, const char *key, int *value, bool not_null) {
+		lua_getfield(L, -1, key);
+		if (lua_isfunction(L, -1)) {
 			*value = luaL_ref(L, LUA_REGISTRYINDEX);
 		} else {
 			lua_pop(L, 1);
@@ -211,15 +260,15 @@ namespace utils {
 		}
 	}
 
-	void table_get_function(lua_State *L, const char *key, int *value) {
-		table_get_function_value(L, key, value, false);
+	void table_get_functionp(lua_State *L, const char *key, int *value) {
+		table_get_functionp_value(L, key, value, false);
 	}
 
-	void table_get_function_not_null(lua_State *L, const char *key, int *value) {
-		table_get_function_value(L, key, value, true);
+	void table_get_functionp_not_null(lua_State *L, const char *key, int *value) {
+		table_get_functionp_value(L, key, value, true);
 	}
 
-	void table_get_function_value(lua_State *L, const char *key, int **value, int *default_value, bool not_null) {
+	/*void table_get_functionp_value(lua_State *L, const char *key, int **value, int *default_value, bool not_null) {
 		if (*value != NULL) {
 			delete *value;
 			*value = NULL;
@@ -240,20 +289,30 @@ namespace utils {
 		}
 	}
 
-	void table_get_function(lua_State *L, const char *key, int **value) {
-		table_get_function_value(L, key, value, NULL, false);
+	void table_get_functionp(lua_State *L, const char *key, int **value) {
+		table_get_functionp_value(L, key, value, NULL, false);
 	}
 
-	void table_get_function(lua_State *L, const char *key, int **value, int default_value) {
-		table_get_function_value(L, key, value, &default_value, false);
+	void table_get_functionp(lua_State *L, const char *key, int **value, int default_value) {
+		table_get_functionp_value(L, key, value, &default_value, false);
 	}
 
-	void table_get_function_not_null(lua_State *L, const char *key, int **value) {
-		table_get_function_value(L, key, value, NULL, true);
-	}
+	void table_get_functionp_not_null(lua_State *L, const char *key, int **value) {
+		table_get_functionp_value(L, key, value, NULL, true);
+	}*/
 
 	// Lightuserdata.
-	void table_get_lightuserdata_value(lua_State *L, const char *key, void **value, void *default_value, bool not_null) {
+	void *table_get_lightuserdata(lua_State *L, const char *key, void *default_value) {
+		lua_getfield(L, -1, key);
+		void *value = default_value;
+		if (lua_islightuserdata(L, -1)) {
+			value = lua_touserdata(L, -1);
+		}
+		lua_pop(L, 1);
+		return value;
+	}
+
+	void table_get_lightuserdatap_value(lua_State *L, const char *key, void **value, void *default_value, bool not_null) {
 		lua_getfield(L, -1, key);
 		int value_type = lua_type(L, -1);
 		if (value_type == LUA_TLIGHTUSERDATA) {
@@ -267,16 +326,51 @@ namespace utils {
 		}
 	}
 
-	void table_get_lightuserdata(lua_State *L, const char *key, void **value) {
-		table_get_lightuserdata_value(L, key, value, NULL, false);
+	void table_get_lightuserdatap(lua_State *L, const char *key, void **value) {
+		table_get_lightuserdatap_value(L, key, value, NULL, false);
 	}
 
-	void table_get_lightuserdata(lua_State *L, const char *key, void **value, void *default_value) {
-		table_get_lightuserdata_value(L, key, value, default_value, false);
+	void table_get_lightuserdatap(lua_State *L, const char *key, void **value, void *default_value) {
+		table_get_lightuserdatap_value(L, key, value, default_value, false);
 	}
 
-	void table_get_lightuserdata_not_null(lua_State *L, const char *key, void **value) {
-		table_get_lightuserdata_value(L, key, value, NULL, true);
+	void table_get_lightuserdatap_not_null(lua_State *L, const char *key, void **value) {
+		table_get_lightuserdatap_value(L, key, value, NULL, true);
+	}
+
+	// Vector3
+	Vectormath::Aos::Vector3 *table_get_vector3(lua_State *L, const char *key, Vectormath::Aos::Vector3 *default_value) {
+		lua_getfield(L, -1, key);
+		Vectormath::Aos::Vector3 *value = default_value;
+		if (lua_isuserdata(L, -1)) {
+			value = dmScript::ToVector3(L, -1);
+		}
+		lua_pop(L, 1);
+		return value;
+	}
+
+	bool table_is_string(lua_State *L, const char *key) {
+		bool result = false;
+		lua_getfield(L, -1, key);
+		result = lua_isstring(L, -1);
+		lua_pop(L, 1);
+		return result;
+	}
+
+	bool table_is_number(lua_State *L, const char *key) {
+		bool result = false;
+		lua_getfield(L, -1, key);
+		result = lua_isnumber(L, -1);
+		lua_pop(L, 1);
+		return result;
+	}
+
+	bool table_is_boolean(lua_State *L, const char *key) {
+		bool result = false;
+		lua_getfield(L, -1, key);
+		result = lua_isboolean(L, -1);
+		lua_pop(L, 1);
+		return result;
 	}
 
 	void table_set_string_field(lua_State *L, const char *key, const char *value) {

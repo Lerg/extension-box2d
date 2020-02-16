@@ -8,6 +8,20 @@ Joint::Joint(b2World *world, b2Joint *joint) :
 	joint->SetUserData(this);
 }
 
+Joint *Joint::get_table_userdata(lua_State *L, const char *key, int index) {
+	Joint *joint = NULL;
+	lua_getfield(L, index, key);
+	if (lua_istable(L, -1)) {
+		lua_getfield(L, -1, "__userdata");
+		if (lua_islightuserdata(L, -1)) {
+			joint = (Joint *)lua_touserdata(L, -1);
+		}
+		lua_pop(L, 1);
+	}
+	lua_pop(L, 1);
+	return joint;
+}
+
 int Joint::index(lua_State *L) {
 	lua_getfield(L, 1, "__userdata");
 	Joint *lua_joint = (Joint *)lua_touserdata(L, -1);

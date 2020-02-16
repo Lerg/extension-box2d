@@ -20,6 +20,8 @@ namespace dmScript {
 	int Ref(lua_State *L, int table);
 	void SetInstance(lua_State *L);
 	void Unref(lua_State *L, int table, int reference);
+	Vectormath::Aos::Vector3 *CheckVector3(lua_State *L, int index);
+	Vectormath::Aos::Vector3 *ToVector3(lua_State *L, int index);
 }
 
 #endif

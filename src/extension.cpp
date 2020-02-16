@@ -13,17 +13,11 @@ static int extension_new_world(lua_State *L) {
 
 	if (lua_istable(L, 1)) {
 		utils::get_table(L, 1);
-		lua_getfield(L, -1, "gravity");
-		if (lua_isuserdata(L, -1)) {
-			lua_getfield(L, -1, "x");
-			gravity.x = lua_tonumber(L, -1);
-			lua_pop(L, 1);
-
-			lua_getfield(L, -1, "y");
-			gravity.y = lua_tonumber(L, -1);
-			lua_pop(L, 1);
+		Vectormath::Aos::Vector3 *v = utils::table_get_vector3(L, "gravity", NULL);
+		if (v != NULL) {
+			gravity.x = v->getX();
+			gravity.y = v->getY();
 		}
-		lua_pop(L, 1);
 	}
 
 	World *world = new World(gravity);
@@ -58,23 +52,8 @@ dmExtension::Result INITIALIZE(dmExtension::Params *params) {
 	lua_pushnumber(L, PhysicsBodyKinematic);
 	lua_setfield(L, -2, "kinematic_body");
 
-	lua_pushnumber(L, PhysicsJointRevolute);
-	lua_setfield(L, -2, "revolute_joint");
-
 	lua_pushnumber(L, PhysicsJointDistance);
 	lua_setfield(L, -2, "distance_joint");
-
-	lua_pushnumber(L, PhysicsJointPrismatic);
-	lua_setfield(L, -2, "prismatic_joint");
-
-	lua_pushnumber(L, PhysicsJointLine);
-	lua_setfield(L, -2, "line_joint");
-
-	lua_pushnumber(L, PhysicsJointWeld);
-	lua_setfield(L, -2, "weld_joint");
-
-	lua_pushnumber(L, PhysicsJointPulley);
-	lua_setfield(L, -2, "pulley_joint");
 
 	lua_pushnumber(L, PhysicsJointFriction);
 	lua_setfield(L, -2, "friction_joint");
@@ -82,14 +61,29 @@ dmExtension::Result INITIALIZE(dmExtension::Params *params) {
 	lua_pushnumber(L, PhysicsJointGear);
 	lua_setfield(L, -2, "gear_joint");
 
+	lua_pushnumber(L, PhysicsJointMotor);
+	lua_setfield(L, -2, "motor_joint");
+
 	lua_pushnumber(L, PhysicsJointMouse);
 	lua_setfield(L, -2, "mouse_joint");
 
-	lua_pushnumber(L, PhysicsJointWheel);
-	lua_setfield(L, -2, "wheel_joint");
+	lua_pushnumber(L, PhysicsJointPrismatic);
+	lua_setfield(L, -2, "prismatic_joint");
+
+	lua_pushnumber(L, PhysicsJointPulley);
+	lua_setfield(L, -2, "pulley_joint");
+
+	lua_pushnumber(L, PhysicsJointRevolute);
+	lua_setfield(L, -2, "revolute_joint");
 
 	lua_pushnumber(L, PhysicsJointRope);
 	lua_setfield(L, -2, "rope_joint");
+
+	lua_pushnumber(L, PhysicsJointWeld);
+	lua_setfield(L, -2, "weld_joint");
+
+	lua_pushnumber(L, PhysicsJointWheel);
+	lua_setfield(L, -2, "wheel_joint");
 
 	lua_pop(params->m_L, 1);
 

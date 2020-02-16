@@ -13,10 +13,21 @@ World::~World() {
 	}
 }
 
-int World::index(lua_State *L) {
-	lua_getfield(L, 1, "__userdata");
-	World *lua_world = (World *)lua_touserdata(L, -1);
+World *World::get_world_userdata(lua_State *L, int index) {
+	World *lua_world = NULL;
+	lua_getfield(L, index, "__userdata");
+	if (lua_islightuserdata(L, -1)) {
+		lua_world = (World *)lua_touserdata(L, -1);
+	}
 	lua_pop(L, 1);
+	return lua_world;
+}
+
+int World::index(lua_State *L) {
+	World *lua_world = get_world_userdata(L, 1);
+	if (lua_world == NULL) {
+		return 0;
+	}
 
 	const char *key = lua_tostring(L, 2);
 	switch (hash_string(key)) {
@@ -31,9 +42,10 @@ int World::index(lua_State *L) {
 }
 
 int World::newindex(lua_State *L) {
-	lua_getfield(L, 1, "__userdata");
-	World *world = (World *)lua_touserdata(L, -1);
-	lua_pop(L, 1);
+	World *lua_world = get_world_userdata(L, 1);
+	if (lua_world == NULL) {
+		return 0;
+	}
 
 	const char *key = lua_tostring(L, 2);
 	const int value_index = 3;
@@ -48,12 +60,10 @@ int World::newindex(lua_State *L) {
 int World::new_body(lua_State *L) {
 	utils::check_arg_count(L, 2);
 
-	lua_getfield(L, 1, "__userdata");
-	if (!lua_islightuserdata(L, -1)) {
+	World *lua_world = get_world_userdata(L, 1);
+	if (lua_world == NULL) {
 		return 0;
 	}
-	World *lua_world = (World *)lua_touserdata(L, -1);
-	lua_pop(L, 1);
 
 	b2BodyDef body_definition;
 	body_definition.type = b2_dynamicBody;
@@ -62,103 +72,42 @@ int World::new_body(lua_State *L) {
 	
 	utils::get_table(L, 2);
 
-	lua_getfield(L, -1, "type");
-	if (lua_isnumber(L, -1)) {
-		double body_type = lua_tonumber(L, -1);
+	int body_type = utils::table_get_integer(L, "type", -1);
+	if (body_type != -1) {
 		if (body_type == PhysicsBodyStatic) {
 			body_definition.type = b2_staticBody;
 		} else if (body_type == PhysicsBodyKinematic) {
 			body_definition.type = b2_kinematicBody;
 		}
 	}
-	lua_pop(L, 1);
 
-	lua_getfield(L, -1, "is_fixed_rotation");
-	if (lua_isboolean(L, -1)) {
-		body_definition.fixedRotation = lua_toboolean(L, -1);
-	}
-	lua_pop(L, 1);
+	body_definition.fixedRotation = utils::table_get_boolean(L, "is_fixed_rotation", false);
 
 	double position_z = 0;
-
-	lua_getfield(L, -1, "position");
-	if (lua_isuserdata(L, -1)) {
-		lua_getfield(L, -1, "x");
-		body_definition.position.x = lua_tonumber(L, -1);
-		lua_pop(L, 1);
-
-		lua_getfield(L, -1, "y");
-		body_definition.position.y = lua_tonumber(L, -1);
-		lua_pop(L, 1);
-
-		lua_getfield(L, -1, "z");
-		position_z = lua_tonumber(L, -1);
-		lua_pop(L, 1);
+	Vectormath::Aos::Vector3 *position = utils::table_get_vector3(L, "position", NULL);
+	if (position != NULL) {
+		body_definition.position.x = position->getX();
+		body_definition.position.y = position->getY();
+		position_z = position->getZ();
 	}
-	lua_pop(L, 1);
 
-	lua_getfield(L, -1, "is_sensor");
-	if (lua_isboolean(L, -1)) {
-		fixture_definition.isSensor = lua_toboolean(L, -1);
-	}
-	lua_pop(L, 1);
+	fixture_definition.isSensor = utils::table_get_boolean(L, "is_sensor", false);
+	fixture_definition.density = utils::table_get_double(L, "density", 1);
+	fixture_definition.friction = utils::table_get_double(L, "friction", 0);
+	fixture_definition.restitution = utils::table_get_double(L, "restitution", 0);
 
-	lua_getfield(L, -1, "density");
-	if (lua_isnumber(L, -1)) {
-		fixture_definition.density = lua_tonumber(L, -1);
+	double width = utils::table_get_double(L, "width", 0);
+	double height = utils::table_get_double(L, "height", 0);
+	double radius = utils::table_get_double(L, "radius", 0);
+	if (utils::table_is_number(L, "category_bits")) {
+		fixture_definition.filter.categoryBits = (uint16)utils::table_get_double(L, "category_bits", 0);
 	}
-	lua_pop(L, 1);
-
-	lua_getfield(L, -1, "friction");
-	if (lua_isnumber(L, -1)) {
-		fixture_definition.friction = lua_tonumber(L, -1);
+	if (utils::table_is_number(L, "mask_bits")) {
+		fixture_definition.filter.maskBits = (uint16)utils::table_get_double(L, "mask_bits", 0);
 	}
-	lua_pop(L, 1);
-
-	lua_getfield(L, -1, "restitution");
-	if (lua_isnumber(L, -1)) {
-		fixture_definition.restitution = lua_tonumber(L, -1);
+	if (utils::table_is_number(L, "group_index")) {
+		fixture_definition.filter.groupIndex = (int16)utils::table_get_double(L, "group_index", 0);
 	}
-	lua_pop(L, 1);
-
-	double width = 0;
-	lua_getfield(L, -1, "width");
-	if (lua_isnumber(L, -1)) {
-		width = lua_tonumber(L, -1);
-	}
-	lua_pop(L, 1);
-
-	double height = 0;
-	lua_getfield(L, -1, "height");
-	if (lua_isnumber(L, -1)) {
-		height = lua_tonumber(L, -1);
-	}
-	lua_pop(L, 1);
-
-	double radius = 0;
-	lua_getfield(L, -1, "radius");
-	if (lua_isnumber(L, -1)) {
-		radius = lua_tonumber(L, -1);
-	}
-	lua_pop(L, 1);
-
-	lua_getfield(L, -1, "category_bits");
-	if (lua_isnumber(L, -1)) {
-		fixture_definition.filter.categoryBits = (uint16)lua_tonumber(L, -1);
-	}
-	lua_pop(L, 1);
-
-	lua_getfield(L, -1, "mask_bits");
-	if (lua_isnumber(L, -1)) {
-		fixture_definition.filter.maskBits = (uint16)lua_tonumber(L, -1);
-	}
-	lua_pop(L, 1);
-
-	lua_getfield(L, -1, "group_index");
-	if (lua_isnumber(L, -1)) {
-		fixture_definition.filter.groupIndex = (int16)lua_tonumber(L, -1);
-	}
-	lua_pop(L, 1);
 
 	b2PolygonShape polygon_shape;
 	b2CircleShape circle_shape;
@@ -169,7 +118,7 @@ int World::new_body(lua_State *L) {
 		circle_shape.m_radius = radius;
 		fixture_definition.shape = &circle_shape;
 	} else {
-		dmLogError("Body must have a shape.");
+		luaL_error(L, "Body must have a shape.");
 	}
 
 	b2Body *body = lua_world->world->CreateBody(&body_definition);
@@ -182,10 +131,10 @@ int World::new_body(lua_State *L) {
 	lua_body->lua_script_instance = dmScript::Ref(L, LUA_REGISTRYINDEX);
 	lua_pop(L, 1);
 
-	utils::table_get_function(L, "on_enter_collision", &lua_body->lua_on_enter_collision);
-	utils::table_get_function(L, "on_exit_collision", &lua_body->lua_on_exit_collision);
-	utils::table_get_function(L, "on_before_collision", &lua_body->lua_on_before_collision);
-	utils::table_get_function(L, "on_after_collision", &lua_body->lua_on_after_collision);
+	utils::table_get_functionp(L, "on_enter_collision", &lua_body->lua_on_enter_collision);
+	utils::table_get_functionp(L, "on_exit_collision", &lua_body->lua_on_exit_collision);
+	utils::table_get_functionp(L, "on_before_collision", &lua_body->lua_on_before_collision);
+	utils::table_get_functionp(L, "on_after_collision", &lua_body->lua_on_after_collision);
 
 	lua_pop(L, 1); // params.
 
@@ -196,109 +145,111 @@ int World::new_body(lua_State *L) {
 int World::new_joint(lua_State *L) {
 	utils::check_arg_count(L, 2);
 
-	lua_getfield(L, 1, "__userdata");
-	if (!lua_islightuserdata(L, -1)) {
+	World *lua_world = get_world_userdata(L, 1);
+	if (lua_world == NULL) {
 		return 0;
 	}
-	World *lua_world = (World *)lua_touserdata(L, -1);
-	lua_pop(L, 1);
 
 	utils::get_table(L, 2);
 
-	int joint_type = PhysicsJointWeld;
-	lua_getfield(L, -1, "type");
-	if (lua_isnumber(L, -1)) {
-		joint_type = lua_tonumber(L, -1);
-	}
-	lua_pop(L, 1);
+	int joint_type = utils::table_get_integer(L, "type", -1);
+	bool collide_connected = utils::table_get_boolean(L, "collide_connected", false);
+	double length = utils::table_get_double(L, "length", 0);
+	double frequency = utils::table_get_double(L, "frequency", 0);
+	double damping = utils::table_get_double(L, "damping", 0);
+	double max_force = utils::table_get_double(L, "max_force", 0);
+	double max_torque = utils::table_get_double(L, "max_torque", 0);
+	double angular_offset = utils::table_get_double(L, "angular_offset", 0);
+	double ratio = utils::table_get_double(L, "ratio", 0);
+	double correction_factor = utils::table_get_double(L, "correction_factor", 0);
 
-	Body *body = NULL;
-	lua_getfield(L, -1, "body");
-	if (lua_istable(L, -1)) {
-		lua_getfield(L, -1, "__userdata");
-		if (lua_islightuserdata(L, -1)) {
-			body = (Body *)lua_touserdata(L, -1);
-		}
-		lua_pop(L, 1);
-	}
-	lua_pop(L, 1);
-
-	Body *other_body = NULL;;
-	lua_getfield(L, -1, "other_body");
-	if (lua_istable(L, -1)) {
-		lua_getfield(L, -1, "__userdata");
-		if (lua_islightuserdata(L, -1)) {
-			other_body = (Body *)lua_touserdata(L, -1);
-		}
-		lua_pop(L, 1);
-	}
-	lua_pop(L, 1);
-
-	bool collide_connected = false;
-	lua_getfield(L, -1, "collide_connected");
-	if (lua_isboolean(L, -1)) {
-		collide_connected = lua_toboolean(L, -1);
-	}
-	lua_pop(L, 1);
+	Body *body = Body::get_table_userdata(L, "body", -1);
+	Body *other_body = Body::get_table_userdata(L, "other_body", -1);
+	Joint *joint_param = Joint::get_table_userdata(L, "joint", -1);
+	Joint *other_joint_param = Joint::get_table_userdata(L, "other_joint", -1);
 
 	b2Vec2 anchor = b2Vec2_zero;
-	lua_getfield(L, -1, "anchor");
-	if (lua_isuserdata(L, -1)) {
-		lua_getfield(L, -1, "x");
-		anchor.x = lua_tonumber(L, -1);
-		lua_pop(L, 1);
-
-		lua_getfield(L, -1, "y");
-		anchor.y = lua_tonumber(L, -1);
-		lua_pop(L, 1);
+	Vectormath::Aos::Vector3 *v = utils::table_get_vector3(L, "anchor", NULL);
+	if (v != NULL) {
+		anchor.x = v->getX();
+		anchor.y = v->getY();
 	}
-	lua_pop(L, 1);
- 
+
 	b2Vec2 other_anchor = b2Vec2_zero;
-	lua_getfield(L, -1, "other_anchor");
-	if (lua_isuserdata(L, -1)) {
-		lua_getfield(L, -1, "x");
-		other_anchor.x = lua_tonumber(L, -1);
-		lua_pop(L, 1);
-
-		lua_getfield(L, -1, "y");
-		other_anchor.y = lua_tonumber(L, -1);
-		lua_pop(L, 1);
+	v = utils::table_get_vector3(L, "other_anchor", NULL);
+	if (v != NULL) {
+		other_anchor.x = v->getX();
+		other_anchor.y = v->getY();
 	}
-	lua_pop(L, 1);
 
-	double length = 0;
-	lua_getfield(L, -1, "length");
-	if (lua_isnumber(L, -1)) {
-		length = lua_tonumber(L, -1);
+	b2Vec2 linear_offset = b2Vec2_zero;
+	v = utils::table_get_vector3(L, "linear_offset", NULL);
+	if (v != NULL) {
+		linear_offset.x = v->getX();
+		linear_offset.y = v->getY();
 	}
-	lua_pop(L, 1);
 
-	double frequency = 0;
-	lua_getfield(L, -1, "frequency");
-	if (lua_isnumber(L, -1)) {
-		frequency = lua_tonumber(L, -1);
+	b2Vec2 target = b2Vec2_zero;
+	v = utils::table_get_vector3(L, "target", NULL);
+	if (v != NULL) {
+		target.x = v->getX();
+		target.y = v->getY();
 	}
-	lua_pop(L, 1);
 
-	double damping = 0;
-	lua_getfield(L, -1, "damping");
-	if (lua_isnumber(L, -1)) {
-		damping = lua_tonumber(L, -1);
+	b2Vec2 axis = b2Vec2_zero;
+	v = utils::table_get_vector3(L, "axis", NULL);
+	if (v != NULL) {
+		axis.x = v->getX();
+		axis.y = v->getY();
 	}
-	lua_pop(L, 1);
 
 	lua_pop(L, 1); // params.
 
-	b2Joint *joint = NULL;
-
-	if (body == NULL) {
-		dmLogError("body should not be nil.");
-		return 0;
-	} else if (joint_type != PhysicsJointMouse && other_body == NULL) {
-		dmLogError("other_body should not be nil.");
-		return 0;
+	switch (joint_type) {
+		case PhysicsJointDistance:
+		case PhysicsJointFriction:
+		case PhysicsJointMotor:
+		case PhysicsJointMouse:
+		case PhysicsJointPrismatic:
+		case PhysicsJointPulley:
+		case PhysicsJointRevolute:
+		case PhysicsJointRope:
+		case PhysicsJointWeld:
+		case PhysicsJointWheel:
+			if (body == NULL) {
+				luaL_error(L, "Incorrect `body`.");
+				return 0;
+			}
 	}
+
+	switch (joint_type) {
+		case PhysicsJointDistance:
+		case PhysicsJointFriction:
+		case PhysicsJointMotor:
+		case PhysicsJointPrismatic:
+		case PhysicsJointPulley:
+		case PhysicsJointRevolute:
+		case PhysicsJointRope:
+		case PhysicsJointWeld:
+		case PhysicsJointWheel:
+			if (other_body == NULL) {
+				luaL_error(L, "Incorrect `other_body`.");
+				return 0;
+			}
+	}
+
+	if (joint_type == PhysicsJointGear) {
+		if (joint_param == NULL) {
+			luaL_error(L, "Incorrect `joint`.");
+			return 0;
+		}
+		if (other_joint_param == NULL) {
+			luaL_error(L, "Incorrect `other_joint`.");
+			return 0;
+		}
+	}
+
+	b2Joint *joint = NULL;
 
 	switch (joint_type) {
 		case PhysicsJointDistance: {
@@ -309,11 +260,60 @@ int World::new_joint(lua_State *L) {
 				} else {
 					joint_definition.length = b2Distance(body->body->GetPosition(), other_body->body->GetPosition());
 				}
-				dmLogInfo("sdgf %f", joint_definition.length);
+				joint_definition.frequencyHz = frequency;
+				joint_definition.dampingRatio = damping;
+				joint = lua_world->world->CreateJoint(&joint_definition);
+			}
+			break;
+		case PhysicsJointFriction: {
+				b2FrictionJointDef joint_definition;
+				joint_definition.Initialize(body->body, other_body->body, anchor);
+				joint_definition.maxForce = max_force;
+				joint_definition.maxTorque = max_torque;
+				joint = lua_world->world->CreateJoint(&joint_definition);
+			}
+			break;
+		case PhysicsJointGear: {
+				b2GearJointDef joint_definition;
+				joint_definition.joint1 = joint_param->joint;
+				joint_definition.joint2 = other_joint_param->joint;
+				joint_definition.ratio = ratio;
+				joint = lua_world->world->CreateJoint(&joint_definition);
+			}
+			break;
+		case PhysicsJointMotor: {
+				b2MotorJointDef joint_definition;
+				joint_definition.Initialize(body->body, other_body->body);
+				joint_definition.linearOffset = linear_offset;
+				joint_definition.angularOffset = angular_offset;
+				joint_definition.maxForce = max_force;
+				joint_definition.maxTorque = max_torque;
+				joint = lua_world->world->CreateJoint(&joint_definition);
+			}
+			break;
+		case PhysicsJointMouse: {
+				b2MouseJointDef joint_definition;
+				joint_definition.target = target;
+				joint_definition.maxForce = max_force;
+				joint_definition.frequencyHz = frequency;
+				joint_definition.dampingRatio = damping;
+				joint = lua_world->world->CreateJoint(&joint_definition);
+			}
+			break;
+		case PhysicsJointPrismatic: {
+				b2PrismaticJointDef joint_definition;
+				joint_definition.Initialize(body->body, other_body->body, anchor, axis);
+				/*joint_definition.enableLimit = enable_limit;
+				joint_definition.lowerTranslation = lower_translation;
+				joint_definition.upperTranslation = upper_translation;
+				joint_definition.enableMotor = enable_motor;
+				joint_definition.maxMotorForce = max_force;
+				joint_definition.motorSpeed = speed;*/
 				joint = lua_world->world->CreateJoint(&joint_definition);
 			}
 			break;
 		default:
+			luaL_error(L, "Incorrect `type`.");
 			break;
 	}
 	
@@ -329,12 +329,10 @@ int World::new_joint(lua_State *L) {
 int World::step(lua_State *L) {
 	utils::check_arg_count(L, 4);
 
-	lua_getfield(L, 1, "__userdata");
-	if (lua_type(L, -1) != LUA_TLIGHTUSERDATA) {
+	World *lua_world = get_world_userdata(L, 1);
+	if (lua_world == NULL) {
 		return 0;
 	}
-	World *lua_world = (World *)lua_touserdata(L, -1);
-	lua_pop(L, 1);
 
 	double time_step = lua_tonumber(L, 2);
 	double velocity_iterations = lua_tonumber(L, 3);
@@ -349,12 +347,10 @@ int World::step(lua_State *L) {
 int World::destroy(lua_State *L) {
 	utils::check_arg_count(L, 1);
 
-	lua_getfield(L, 1, "__userdata");
-	if (lua_type(L, -1) != LUA_TLIGHTUSERDATA) {
+	World *lua_world = get_world_userdata(L, 1);
+	if (lua_world == NULL) {
 		return 0;
 	}
-	World *lua_world = (World *)lua_touserdata(L, -1);
-	lua_pop(L, 1);
 
 	for (b2Body *body = lua_world->world->GetBodyList(); body; body = body->GetNext()) {
 		Body *lua_body = (Body *)body->GetUserData();

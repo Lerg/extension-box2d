@@ -15,6 +15,20 @@ Body::Body(b2World *world, b2Body *body) :
 	body->SetUserData(this);
 }
 
+Body *Body::get_table_userdata(lua_State *L, const char *key, int index) {
+	Body *body = NULL;
+	lua_getfield(L, index, key);
+	if (lua_istable(L, -1)) {
+		lua_getfield(L, -1, "__userdata");
+		if (lua_islightuserdata(L, -1)) {
+			body = (Body *)lua_touserdata(L, -1);
+		}
+		lua_pop(L, 1);
+	}
+	lua_pop(L, 1);
+	return body;
+}
+
 int Body::index(lua_State *L) {
 	lua_getfield(L, 1, "__userdata");
 	Body *lua_body = (Body *)lua_touserdata(L, -1);

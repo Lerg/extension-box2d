@@ -31,31 +31,43 @@ namespace utils {
 	void check_arg_count(lua_State *L, int count_from, int count_to);
 	void get_table(lua_State *L, int index);
 
-	void table_get_string(lua_State *L, const char *key, char **value);
-	void table_get_string(lua_State *L, const char *key, char **value, const char *default_value);
-	void table_get_string_not_null(lua_State *L, const char *key, char **value);
+	const char *table_get_string(lua_State *L, const char *key, const char *default_value);
+	void table_get_stringp(lua_State *L, const char *key, char **value);
+	void table_get_stringp(lua_State *L, const char *key, char **value, const char *default_value);
+	void table_get_stringp_not_null(lua_State *L, const char *key, char **value);
 
-	void table_get_integer(lua_State *L, const char *key, int **value);
-	void table_get_integer(lua_State *L, const char *key, int **value, int default_value);
-	void table_get_integer_not_null(lua_State *L, const char *key, int **value);
+	int table_get_integer(lua_State *L, const char *key, int default_value);
+	void table_get_integerp(lua_State *L, const char *key, int **value);
+	void table_get_integerp(lua_State *L, const char *key, int **value, int default_value);
+	void table_get_integerp_not_null(lua_State *L, const char *key, int **value);
 
-	void table_get_double(lua_State *L, const char *key, double **value);
-	void table_get_double(lua_State *L, const char *key, double **value, double default_value);
-	void table_get_double_not_null(lua_State *L, const char *key, double **value);
+	double table_get_double(lua_State *L, const char *key, double default_value);
+	void table_get_doublep(lua_State *L, const char *key, double **value);
+	void table_get_doublep(lua_State *L, const char *key, double **value, double default_value);
+	void table_get_doublep_not_null(lua_State *L, const char *key, double **value);
 
-	void table_get_boolean(lua_State *L, const char *key, bool **value);
-	void table_get_boolean(lua_State *L, const char *key, bool **value, bool default_value);
-	void table_get_boolean_not_null(lua_State *L, const char *key, bool **value);
+	bool table_get_boolean(lua_State *L, const char *key, bool default_value);
+	void table_get_booleanp(lua_State *L, const char *key, bool **value);
+	void table_get_booleanp(lua_State *L, const char *key, bool **value, bool default_value);
+	void table_get_booleanp_not_null(lua_State *L, const char *key, bool **value);
 
 	void table_get_function(lua_State *L, const char *key, int *value);
 
-	void table_get_function(lua_State *L, const char *key, int **value);
-	void table_get_function(lua_State *L, const char *key, int **value, int default_value);
-	void table_get_function_not_null(lua_State *L, const char *key, int **value);
+	int table_get_function(lua_State *L, const char *key, int default_value);
+	void table_get_functionp(lua_State *L, const char *key, int *value);
+	void table_get_functionp(lua_State *L, const char *key, int *value, int default_value);
+	void table_get_functionp_not_null(lua_State *L, const char *key, int *value);
 
-	void table_get_lightuserdata(lua_State *L, const char *key, void **value);
-	void table_get_lightuserdata(lua_State *L, const char *key, void **value, void *default_value);
-	void table_get_lightuserdata_not_null(lua_State *L, const char *key, void **value);
+	void *table_get_lightuserdata(lua_State *L, const char *key, void *default_value);
+	void table_get_lightuserdatap(lua_State *L, const char *key, void **value);
+	void table_get_lightuserdatap(lua_State *L, const char *key, void **value, void *default_value);
+	void table_get_lightuserdatap_not_null(lua_State *L, const char *key, void **value);
+
+	Vectormath::Aos::Vector3 *table_get_vector3(lua_State *L, const char *key, Vectormath::Aos::Vector3 *default_value);
+
+	bool table_is_string(lua_State *L, const char *key);
+	bool table_is_number(lua_State *L, const char *key);
+	bool table_is_boolean(lua_State *L, const char *key);
 
 	void dispatch_event(lua_State *L, int lua_listener, int lua_script_instance, Event *event);
 

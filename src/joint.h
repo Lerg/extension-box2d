@@ -4,17 +4,17 @@
 #include "extension.h"
 
 enum PhysicsJoint {
-	PhysicsJointRevolute,
 	PhysicsJointDistance,
-	PhysicsJointPrismatic,
-	PhysicsJointLine,
-	PhysicsJointWeld,
-	PhysicsJointPulley,
 	PhysicsJointFriction,
 	PhysicsJointGear,
+	PhysicsJointMotor,
 	PhysicsJointMouse,
-	PhysicsJointWheel,
-	PhysicsJointRope
+	PhysicsJointPrismatic,
+	PhysicsJointPulley,
+	PhysicsJointRevolute,
+	PhysicsJointRope,
+	PhysicsJointWeld,
+	PhysicsJointWheel
 };
 
 class Joint {
@@ -25,6 +25,7 @@ private:
 	static int destroy(lua_State *L);
 public:
 	Joint(b2World *world, b2Joint *joint);
+	static Joint *get_table_userdata(lua_State *L, const char *key, int index);
 	b2Joint *joint;
 	int lua_instance;
 	void delete_lua_references(lua_State *L);

@@ -28,6 +28,7 @@ public:
 	b2World *world;
 	World(b2Vec2 gravity);
 	~World();
+	static World *get_world_userdata(lua_State *L, int index);
 	void push(lua_State *L);
 	void dispatch_collision_events(lua_State *L);
 

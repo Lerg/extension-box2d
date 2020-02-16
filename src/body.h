@@ -19,6 +19,7 @@ private:
 	static int destroy(lua_State *L);
 public:
 	Body(b2World *world, b2Body *body);
+	static Body *get_table_userdata(lua_State *L, const char *key, int index);
 	double position_z;
 	bool is_active;
 	int lua_instance, lua_script_instance;
