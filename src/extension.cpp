@@ -13,11 +13,8 @@ static int extension_new_world(lua_State *L) {
 
 	if (lua_istable(L, 1)) {
 		utils::get_table(L, 1);
-		Vectormath::Aos::Vector3 *v = utils::table_get_vector3(L, "gravity", NULL);
-		if (v != NULL) {
-			gravity.x = v->getX();
-			gravity.y = v->getY();
-		}
+		extra_utils::table_get_b2vec(L, "gravity", &gravity);
+		lua_pop(L, 1);
 	}
 
 	World *world = new World(gravity);

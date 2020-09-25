@@ -11,10 +11,12 @@ enum PhysicsBody {
 
 class Body {
 private:
+	static Body *get_userdata(lua_State *L);
 	b2World *world;
 	static int index(lua_State *L);
 	static int newindex(lua_State *L);
 	static int new_body(lua_State *L);
+	static int set_transform(lua_State *L);
 	static int apply_force(lua_State *L);
 	static int destroy(lua_State *L);
 public:

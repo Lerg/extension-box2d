@@ -21,7 +21,7 @@
 #include <dmsdk/dlib/log.h>
 #include <dmsdk/script/script.h>
 
-#include <dmsdk/vectormath_aos.h>
+#include <dmsdk/vectormath/vectormath_aos.h>
 
 #define luaL_reg luaL_Reg
 

@@ -6,6 +6,7 @@
 #include "extension.h"
 #include "body.h"
 #include "joint.h"
+#include "extra_utils.h"
 
 struct CollisionEvent {
 	Body *body;
@@ -16,6 +17,7 @@ struct CollisionEvent {
 
 class World : public b2ContactListener {
 private:
+	static World *get_userdata(lua_State *L, int index);
 	std::queue<CollisionEvent> collision_event_queue;
 	static int index(lua_State *L);
 	static int newindex(lua_State *L);
@@ -28,7 +30,6 @@ public:
 	b2World *world;
 	World(b2Vec2 gravity);
 	~World();
-	static World *get_world_userdata(lua_State *L, int index);
 	void push(lua_State *L);
 	void dispatch_collision_events(lua_State *L);
 

@@ -19,6 +19,7 @@ enum PhysicsJoint {
 
 class Joint {
 private:
+	static Joint *get_userdata(lua_State *L);
 	b2World *world;
 	static int index(lua_State *L);
 	static int newindex(lua_State *L);

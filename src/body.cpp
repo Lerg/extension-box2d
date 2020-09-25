@@ -15,6 +15,16 @@ Body::Body(b2World *world, b2Body *body) :
 	body->SetUserData(this);
 }
 
+Body *Body::get_userdata(lua_State *L) {
+	Body *body = NULL;
+	lua_getfield(L, 1, "__userdata");
+	if (lua_islightuserdata(L, -1)) {
+		body = (Body *)lua_touserdata(L, -1);
+	}
+	lua_pop(L, 1);
+	return body;
+}
+
 Body *Body::get_table_userdata(lua_State *L, const char *key, int index) {
 	Body *body = NULL;
 	lua_getfield(L, index, key);
@@ -30,9 +40,10 @@ Body *Body::get_table_userdata(lua_State *L, const char *key, int index) {
 }
 
 int Body::index(lua_State *L) {
-	lua_getfield(L, 1, "__userdata");
-	Body *lua_body = (Body *)lua_touserdata(L, -1);
-	lua_pop(L, 1);
+	Body *lua_body = get_userdata(L);
+	if (lua_body == NULL) {
+		return 0;
+	}
 
 	const char *key = lua_tostring(L, 2);
 	switch (hash_string(key)) {
@@ -77,9 +88,10 @@ int Body::index(lua_State *L) {
 }
 
 int Body::newindex(lua_State *L) {
-	lua_getfield(L, 1, "__userdata");
-	Body *lua_body = (Body *)lua_touserdata(L, -1);
-	lua_pop(L, 1);
+	Body *lua_body = get_userdata(L);
+	if (lua_body == NULL) {
+		return 0;
+	}
 
 	const char *key = lua_tostring(L, 2);
 	const int value_index = 3;
@@ -88,6 +100,14 @@ int Body::newindex(lua_State *L) {
 			if (lua_isboolean(L, value_index)) {
 				lua_body->is_active = lua_toboolean(L, value_index);
 				lua_body->body->SetActive(lua_body->is_active);
+			}			
+			break;
+		case HASH_is_sensor:
+			if (lua_isboolean(L, value_index)) {
+				bool is_sensor = lua_toboolean(L, value_index);
+				for (b2Fixture *f = lua_body->body->GetFixtureList(); f; f = f->GetNext()) {
+					f->SetSensor(is_sensor);
+				}
 			}			
 			break;
 		case HASH_angular_velocity:
@@ -126,6 +146,12 @@ int Body::newindex(lua_State *L) {
 				lua_body->body->SetTransform(position, lua_body->body->GetAngle());
 			}
 			break;
+		case HASH_angle:
+			if (lua_isnumber(L, value_index)) {
+				double angle = lua_tonumber(L, -1);
+				lua_body->body->SetTransform(lua_body->body->GetPosition(), angle);
+			}
+			break;
 		case HASH_type:
 			if (lua_isnumber(L, value_index)) {
 				double body_type = lua_tonumber(L, -1);
@@ -147,14 +173,12 @@ int Body::newindex(lua_State *L) {
 int Body::apply_force(lua_State *L) {
 	utils::check_arg_count(L, 2, 3);
 
-	lua_getfield(L, 1, "__userdata");
-	if (lua_type(L, -1) != LUA_TLIGHTUSERDATA) {
+	Body *lua_body = get_userdata(L);
+	if (lua_body == NULL) {
 		return 0;
 	}
-	Body *lua_body = (Body *)lua_touserdata(L, -1);
-	lua_pop(L, 1);
 
-	b2Vec2 force;
+	b2Vec2 force = b2Vec2_zero;
 	if (lua_isuserdata(L, 2)) {
 		lua_getfield(L, 2, "x");
 		force.x = lua_tonumber(L, -1);
@@ -166,7 +190,7 @@ int Body::apply_force(lua_State *L) {
 	}
 
 	if (lua_isuserdata(L, 3)) {
-		b2Vec2 position;
+		b2Vec2 position = b2Vec2_zero;
 		lua_getfield(L, 3, "x");
 		position.x = lua_tonumber(L, -1);
 		lua_pop(L, 1);
@@ -183,15 +207,41 @@ int Body::apply_force(lua_State *L) {
 	return 0;
 }
 
+// set_transform(position, angle)
+int Body::set_transform(lua_State *L) {
+	utils::check_arg_count(L, 2, 3);
+
+	Body *lua_body = get_userdata(L);
+	if (lua_body == NULL) {
+		return 0;
+	}
+	
+	b2Vec2 position = b2Vec2_zero;
+	if (lua_isuserdata(L, 2)) {
+		lua_getfield(L, 2, "x");
+		position.x = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+
+		lua_getfield(L, 2, "y");
+		position.y = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+	}
+
+	double angle = 0;
+	if (lua_isnumber(L, 3)) {
+		angle = lua_tonumber(L, -1);
+	}
+	lua_body->body->SetTransform(position, angle);
+	return 0;
+}
+
 int Body::destroy(lua_State *L) {
 	utils::check_arg_count(L, 1);
 
-	lua_getfield(L, 1, "__userdata");
-	if (lua_type(L, -1) != LUA_TLIGHTUSERDATA) {
+	Body *lua_body = get_userdata(L);
+	if (lua_body == NULL) {
 		return 0;
 	}
-	Body *lua_body = (Body *)lua_touserdata(L, -1);
-	lua_pop(L, 1);
 
 	lua_body->delete_lua_references(L);
 	lua_body->world->DestroyBody(lua_body->body);
@@ -229,6 +279,10 @@ void Body::push(lua_State *L) {
 	// body:apply_force()
 	lua_pushcfunction(L, apply_force);
 	lua_setfield(L, -2, "apply_force");
+
+	// body:set_transform()
+	lua_pushcfunction(L, set_transform);
+	lua_setfield(L, -2, "set_transform");
 
 	// body:destroy()
 	lua_pushcfunction(L, destroy);

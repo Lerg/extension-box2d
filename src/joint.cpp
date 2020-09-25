@@ -8,6 +8,16 @@ Joint::Joint(b2World *world, b2Joint *joint) :
 	joint->SetUserData(this);
 }
 
+Joint *Joint::get_userdata(lua_State *L) {
+	Joint *joint = NULL;
+	lua_getfield(L, 1, "__userdata");
+	if (lua_islightuserdata(L, -1)) {
+		joint = (Joint *)lua_touserdata(L, -1);
+	}
+	lua_pop(L, 1);
+	return joint;
+}
+
 Joint *Joint::get_table_userdata(lua_State *L, const char *key, int index) {
 	Joint *joint = NULL;
 	lua_getfield(L, index, key);
@@ -23,9 +33,10 @@ Joint *Joint::get_table_userdata(lua_State *L, const char *key, int index) {
 }
 
 int Joint::index(lua_State *L) {
-	lua_getfield(L, 1, "__userdata");
-	Joint *lua_joint = (Joint *)lua_touserdata(L, -1);
-	lua_pop(L, 1);
+	Joint *lua_joint = get_userdata(L);
+	if (lua_joint == NULL) {
+		return 0;
+	}
 
 	const char *key = lua_tostring(L, 2);
 	switch (hash_string(key)) {
@@ -36,9 +47,10 @@ int Joint::index(lua_State *L) {
 }
 
 int Joint::newindex(lua_State *L) {
-	lua_getfield(L, 1, "__userdata");
-	Joint *lua_joint = (Joint *)lua_touserdata(L, -1);
-	lua_pop(L, 1);
+	Joint *lua_joint = get_userdata(L);
+	if (lua_joint == NULL) {
+		return 0;
+	}
 
 	const char *key = lua_tostring(L, 2);
 	const int value_index = 3;
@@ -52,12 +64,10 @@ int Joint::newindex(lua_State *L) {
 int Joint::destroy(lua_State *L) {
 	utils::check_arg_count(L, 1);
 
-	lua_getfield(L, 1, "__userdata");
-	if (!lua_islightuserdata(L, -1)) {
+	Joint *lua_joint = get_userdata(L);
+	if (lua_joint == NULL) {
 		return 0;
 	}
-	Joint *lua_joint = (Joint *)lua_touserdata(L, -1);
-	lua_pop(L, 1);
 
 	lua_joint->delete_lua_references(L);
 	lua_joint->world->DestroyJoint(lua_joint->joint);

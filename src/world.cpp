@@ -13,7 +13,7 @@ World::~World() {
 	}
 }
 
-World *World::get_world_userdata(lua_State *L, int index) {
+World *World::get_userdata(lua_State *L, int index) {
 	World *lua_world = NULL;
 	lua_getfield(L, index, "__userdata");
 	if (lua_islightuserdata(L, -1)) {
@@ -24,7 +24,7 @@ World *World::get_world_userdata(lua_State *L, int index) {
 }
 
 int World::index(lua_State *L) {
-	World *lua_world = get_world_userdata(L, 1);
+	World *lua_world = get_userdata(L, 1);
 	if (lua_world == NULL) {
 		return 0;
 	}
@@ -42,7 +42,7 @@ int World::index(lua_State *L) {
 }
 
 int World::newindex(lua_State *L) {
-	World *lua_world = get_world_userdata(L, 1);
+	World *lua_world = get_userdata(L, 1);
 	if (lua_world == NULL) {
 		return 0;
 	}
@@ -60,7 +60,7 @@ int World::newindex(lua_State *L) {
 int World::new_body(lua_State *L) {
 	utils::check_arg_count(L, 2);
 
-	World *lua_world = get_world_userdata(L, 1);
+	World *lua_world = get_userdata(L, 1);
 	if (lua_world == NULL) {
 		return 0;
 	}
@@ -145,23 +145,33 @@ int World::new_body(lua_State *L) {
 int World::new_joint(lua_State *L) {
 	utils::check_arg_count(L, 2);
 
-	World *lua_world = get_world_userdata(L, 1);
+	World *lua_world = get_userdata(L, 1);
 	if (lua_world == NULL) {
 		return 0;
 	}
 
 	utils::get_table(L, 2);
 
-	int joint_type = utils::table_get_integer(L, "type", -1);
 	bool collide_connected = utils::table_get_boolean(L, "collide_connected", false);
-	double length = utils::table_get_double(L, "length", 0);
-	double frequency = utils::table_get_double(L, "frequency", 0);
-	double damping = utils::table_get_double(L, "damping", 0);
-	double max_force = utils::table_get_double(L, "max_force", 0);
-	double max_torque = utils::table_get_double(L, "max_torque", 0);
+	bool enable_limit = utils::table_get_boolean(L, "enable_limit", false);
+	bool enable_motor = utils::table_get_boolean(L, "enable_motor", false);
+
+	int joint_type = utils::table_get_integer(L, "type", -1);
+
 	double angular_offset = utils::table_get_double(L, "angular_offset", 0);
-	double ratio = utils::table_get_double(L, "ratio", 0);
 	double correction_factor = utils::table_get_double(L, "correction_factor", 0);
+	double damping = utils::table_get_double(L, "damping", 0);
+	double frequency = utils::table_get_double(L, "frequency", 0);
+	double length = utils::table_get_double(L, "length", 0);
+	double lower_angle = utils::table_get_double(L, "lower_angle", 0);
+	double lower_translation = utils::table_get_double(L, "lower_translation", 0);
+	double max_force = utils::table_get_double(L, "max_force", 0);
+	double max_length = utils::table_get_double(L, "max_length", 0);
+	double max_torque = utils::table_get_double(L, "max_torque", 0);
+	double ratio = utils::table_get_double(L, "ratio", 0);
+	double speed = utils::table_get_double(L, "speed", 0);
+	double upper_angle = utils::table_get_double(L, "upper_angle", 0);
+	double upper_translation = utils::table_get_double(L, "upper_translation", 0);
 
 	Body *body = Body::get_table_userdata(L, "body", -1);
 	Body *other_body = Body::get_table_userdata(L, "other_body", -1);
@@ -169,39 +179,25 @@ int World::new_joint(lua_State *L) {
 	Joint *other_joint_param = Joint::get_table_userdata(L, "other_joint", -1);
 
 	b2Vec2 anchor = b2Vec2_zero;
-	Vectormath::Aos::Vector3 *v = utils::table_get_vector3(L, "anchor", NULL);
-	if (v != NULL) {
-		anchor.x = v->getX();
-		anchor.y = v->getY();
-	}
+	extra_utils::table_get_b2vec(L, "anchor", &anchor);
 
 	b2Vec2 other_anchor = b2Vec2_zero;
-	v = utils::table_get_vector3(L, "other_anchor", NULL);
-	if (v != NULL) {
-		other_anchor.x = v->getX();
-		other_anchor.y = v->getY();
-	}
+	extra_utils::table_get_b2vec(L, "other_anchor", &other_anchor);
+
+	b2Vec2 ground_anchor = b2Vec2_zero;
+	extra_utils::table_get_b2vec(L, "ground_anchor", &ground_anchor);
+
+	b2Vec2 other_ground_anchor = b2Vec2_zero;
+	extra_utils::table_get_b2vec(L, "other_ground_anchor", &other_ground_anchor);
 
 	b2Vec2 linear_offset = b2Vec2_zero;
-	v = utils::table_get_vector3(L, "linear_offset", NULL);
-	if (v != NULL) {
-		linear_offset.x = v->getX();
-		linear_offset.y = v->getY();
-	}
+	extra_utils::table_get_b2vec(L, "linear_offset", &linear_offset);
 
 	b2Vec2 target = b2Vec2_zero;
-	v = utils::table_get_vector3(L, "target", NULL);
-	if (v != NULL) {
-		target.x = v->getX();
-		target.y = v->getY();
-	}
+	extra_utils::table_get_b2vec(L, "target", &target);
 
 	b2Vec2 axis = b2Vec2_zero;
-	v = utils::table_get_vector3(L, "axis", NULL);
-	if (v != NULL) {
-		axis.x = v->getX();
-		axis.y = v->getY();
-	}
+	extra_utils::table_get_b2vec(L, "axis", &axis);
 
 	lua_pop(L, 1); // params.
 
@@ -303,12 +299,57 @@ int World::new_joint(lua_State *L) {
 		case PhysicsJointPrismatic: {
 				b2PrismaticJointDef joint_definition;
 				joint_definition.Initialize(body->body, other_body->body, anchor, axis);
-				/*joint_definition.enableLimit = enable_limit;
+				joint_definition.enableLimit = enable_limit;
 				joint_definition.lowerTranslation = lower_translation;
 				joint_definition.upperTranslation = upper_translation;
 				joint_definition.enableMotor = enable_motor;
 				joint_definition.maxMotorForce = max_force;
-				joint_definition.motorSpeed = speed;*/
+				joint_definition.motorSpeed = speed;
+				joint = lua_world->world->CreateJoint(&joint_definition);
+			}
+			break;
+		case PhysicsJointPulley: {
+				b2PulleyJointDef joint_definition;
+				joint_definition.Initialize(body->body, other_body->body, ground_anchor, other_ground_anchor, anchor, other_anchor, ratio);
+				joint = lua_world->world->CreateJoint(&joint_definition);
+			}
+			break;
+		case PhysicsJointRevolute: {
+				b2RevoluteJointDef joint_definition;
+				joint_definition.Initialize(body->body, other_body->body, anchor);
+				joint_definition.enableLimit = enable_limit;
+				joint_definition.lowerAngle = lower_angle;
+				joint_definition.upperAngle = upper_angle;
+				joint_definition.enableMotor = enable_motor;
+				joint_definition.maxMotorTorque = max_torque;
+				joint_definition.motorSpeed = speed;
+				joint = lua_world->world->CreateJoint(&joint_definition);
+			}
+			break;
+		case PhysicsJointRope: {
+				b2RopeJointDef joint_definition;
+				joint_definition.localAnchorA = anchor;
+				joint_definition.localAnchorB = other_anchor;
+				joint_definition.maxLength = max_length;
+				joint = lua_world->world->CreateJoint(&joint_definition);
+			}
+			break;
+		case PhysicsJointWeld: {
+				b2WeldJointDef joint_definition;
+				joint_definition.Initialize(body->body, other_body->body, anchor);
+				joint_definition.frequencyHz = frequency;
+				joint_definition.dampingRatio = damping;
+				joint = lua_world->world->CreateJoint(&joint_definition);
+			}
+			break;
+		case PhysicsJointWheel: {
+				b2WheelJointDef joint_definition;
+				joint_definition.Initialize(body->body, other_body->body, anchor, axis);
+				joint_definition.enableMotor = enable_motor;
+				joint_definition.maxMotorTorque = max_torque;
+				joint_definition.motorSpeed = speed;
+				joint_definition.frequencyHz = frequency;
+				joint_definition.dampingRatio = damping;
 				joint = lua_world->world->CreateJoint(&joint_definition);
 			}
 			break;
@@ -329,7 +370,7 @@ int World::new_joint(lua_State *L) {
 int World::step(lua_State *L) {
 	utils::check_arg_count(L, 4);
 
-	World *lua_world = get_world_userdata(L, 1);
+	World *lua_world = get_userdata(L, 1);
 	if (lua_world == NULL) {
 		return 0;
 	}
@@ -347,7 +388,7 @@ int World::step(lua_State *L) {
 int World::destroy(lua_State *L) {
 	utils::check_arg_count(L, 1);
 
-	World *lua_world = get_world_userdata(L, 1);
+	World *lua_world = get_userdata(L, 1);
 	if (lua_world == NULL) {
 		return 0;
 	}
