@@ -1,0 +1,42 @@
+local window = require('libs.window')
+
+function init(self)
+	self.assets_pred = render.predicate({"asset"})
+
+	self.clear_color = vmath.vector4(0, 0, 0, 0)
+	self.clear_color.x = sys.get_config("render.clear_color_red", 0.8)
+	self.clear_color.y = sys.get_config("render.clear_color_green", 0.8)
+	self.clear_color.z = sys.get_config("render.clear_color_blue", 1)
+	self.clear_color.w = sys.get_config("render.clear_color_alpha", 0)
+
+	self.view = vmath.matrix4()
+	window.width = render.get_window_width()
+	window.height = render.get_window_height()
+end
+
+function update(self)
+	window.width = render.get_window_width()
+	window.height = render.get_window_height()
+	render.set_depth_mask(true)
+	render.set_stencil_mask(0xff)
+	render.clear({[render.BUFFER_COLOR_BIT] = self.clear_color, [render.BUFFER_DEPTH_BIT] = 1, [render.BUFFER_STENCIL_BIT] = 0})
+
+	render.set_viewport(0, 0, window.width, window.height)
+	render.set_view(self.view)
+
+	render.set_depth_mask(false)
+	render.disable_state(render.STATE_DEPTH_TEST)
+	render.disable_state(render.STATE_STENCIL_TEST)
+	render.enable_state(render.STATE_BLEND)
+	render.set_blend_func(render.BLEND_SRC_ALPHA, render.BLEND_ONE_MINUS_SRC_ALPHA)
+	render.disable_state(render.STATE_CULL_FACE)
+
+	render.set_projection(vmath.matrix4_orthographic(-0.5 * window.width, 0.5 * window.width, -0.5 * window.height, 0.5 * window.height, -100, 100))
+
+	render.draw(self.assets_pred)
+	render.draw_debug3d()
+end
+
+function on_message(self, message_id, message)
+
+end

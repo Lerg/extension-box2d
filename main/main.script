@@ -1,0 +1,149 @@
+local window = require('libs.window')
+
+function init(self)
+	msg.post('.', 'acquire_input_focus')
+	math.randomseed(os.time())
+
+	self.gravity = vmath.vector3(0, -100, 0)
+	self.world = box2d.new_world{
+		gravity = self.gravity
+	}
+
+	self.group = go.get_id('/group')
+
+	local position = vmath.vector3(-35, 0, 0)
+	local circle_radius = 3
+	self.circle = {
+		radius = circle_radius,
+		instance = factory.create('/factories#circle', position, nil, nil, vmath.vector3(2 * circle_radius, 2 * circle_radius, 1))
+	}
+	self.circle.component_url = msg.url(nil, self.circle.instance, 'component')
+	go.set_parent(self.circle.instance, self.group, false)
+	model.set_constant(self.circle.component_url, 'tint', vmath.vector4(0.2, 0.9, 0.4, 1.0))
+	
+	self.circle.body = self.world:new_body{
+		position = position,
+		radius = circle_radius,
+		friction = 0.3,
+		density = 1,
+		restitution = 0.5,
+		on_enter_collision = function(event)
+			if event.other.is_block then
+				if event.other.is_goal then
+					print('You have hit the GOAL!')
+				end
+				event.other.active = false
+				msg.post(event.other.instance, hash('disable'))
+			end
+		end
+		--on_exit_collision
+		--on_before_collision
+		--on_after_collision
+	}
+	self.circle.body.active = false
+
+	local ground_position = vmath.vector3(0, -30, 0)
+	local ground_width = 100
+	local ground_height = 5
+	local ground = {
+		instance = factory.create('/factories#rect', ground_position, nil, nil, vmath.vector3(ground_width, ground_height, 1))
+	}
+	ground.component_url = msg.url(nil, ground.instance, 'component')
+	go.set_parent(ground.instance, self.group, false)
+	model.set_constant(ground.component_url, 'tint', vmath.vector4(0.3, 0.4, 0.5, 1.0))
+	ground.body = self.world:new_body{
+		type = box2d.static_body,
+		position = ground_position,
+		width = ground_width,
+		height = ground_height,
+		friction = 1
+	}
+
+	self.blocks = {}
+	for i = 1, 10 do
+		local is_goal = false
+		if i == 10 then
+			is_goal = true
+		end
+		local block_position = vmath.vector3(math.random(10, 35), math.random(-20, 20), 0)
+		local block_width = math.random(2, 10)
+		local block_height = math.random(5, 15)
+		local block = {
+			instance = factory.create('/factories#rect', block_position, nil, nil, vmath.vector3(block_width, block_height, 1))
+		}
+		block.component_url = msg.url(nil, block.instance, 'component')
+		go.set_parent(block.instance, self.group, false)
+		model.set_constant(block.component_url, 'tint', vmath.vector4(is_goal and 1 or 0.6 * math.random(), 0.3, 0.5, 1.0))
+		block.body = self.world:new_body{
+			position = block_position,
+			width = block_width,
+			height = block_height,
+			friction = 0.3,
+			density = 1
+		}
+		block.body.is_block = true
+		block.body.is_goal = is_goal
+		block.body.instance = block.instance
+		table.insert(self.blocks, block)
+	end
+end
+
+function final(self)
+	self.world:destroy()
+end
+
+function update(self, dt)
+	self.world:step(dt, 8, 6)
+	go.set_position(self.circle.body.position, self.circle.instance)
+
+	for i = 1, #self.blocks do
+		local block = self.blocks[i]
+		go.set_position(block.body.position, block.instance)
+		
+		go.set_rotation(vmath.quat_rotation_z(block.body.angle), block.instance)
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Remove this function if not needed
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash('touch') then
+		local direction = vmath.vector3(action.screen_x - 0.5 * window.width, action.screen_y - 0.5 * window.height, 0)
+		local velocity = 100 * vmath.normalize(direction)
+		if action.released then
+			self.circle.body.active = true
+			self.circle.body.linear_velocity = velocity
+		else
+			if not self.dots then
+				self.dots = {}
+			else
+				for i = 1, #self.dots do
+					go.delete(self.dots[i])
+				end
+				self.dots = {}
+			end
+			local world = box2d.new_world{
+				gravity = self.gravity
+			}
+			local circle = world:new_body{
+				position = self.circle.body.position,
+				radius = self.circle.radius,
+				friction = 0.3,
+				density = 1
+			}
+			circle.linear_velocity = velocity
+			local dot_radius = 0.5
+			local dt = 1 / 60
+			for i = 1, 60 do
+				world:step(dt, 8, 6)
+				local dot = factory.create('/factories#circle', circle.position + vmath.vector3(0, 0, 1), nil, nil, vmath.vector3(2 * dot_radius, 2 * dot_radius, 1))
+				go.set_parent(dot, self.group, false)
+				table.insert(self.dots, dot)
+			end
+			world:destroy()
+		end
+	end
+end
