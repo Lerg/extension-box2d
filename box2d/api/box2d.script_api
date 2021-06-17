@@ -29,7 +29,7 @@
 
   - name: kinematic_body
     type: number
-    desc: Static body.
+    desc: kinematic body.
 
   - name: distance_joint
     type: number
